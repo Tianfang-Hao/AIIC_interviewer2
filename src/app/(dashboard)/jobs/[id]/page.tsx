@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Users,
   Clock,
+  Sparkles,
 } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -55,7 +56,7 @@ export default async function JobDetailPage({
     prisma.resume.findFirst({
       where: { userId, parsedData: { not: Prisma.DbNull } },
       orderBy: { updatedAt: 'desc' },
-      select: { parsedData: true },
+      select: { id: true, parsedData: true },
     }),
     prisma.jobPreference.findUnique({
       where: { userId },
@@ -114,6 +115,15 @@ export default async function JobDetailPage({
           返回岗位列表
         </Link>
         <div className="flex items-center gap-2">
+          {resume?.id && (
+            <Link
+              href={`/resumes/${resume.id}/optimize?jobId=${job.id}`}
+              className={buttonVariants({ variant: 'default', size: 'sm' })}
+            >
+              <Sparkles className="mr-1 h-4 w-4" />
+              针对此岗位优化简历
+            </Link>
+          )}
           <DeleteJobButton jobId={job.id} jobName={job.positionName} />
         </div>
       </div>
@@ -239,6 +249,20 @@ export default async function JobDetailPage({
           </CardHeader>
           <CardContent>
             <MatchDetailInline match={matchInfo} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Optimize resume prompt */}
+      {!resume?.id && (
+        <Card>
+          <CardContent className="py-4">
+            <p className="text-sm text-muted-foreground">
+              上传并解析简历后，即可使用「针对此岗位优化简历」功能。
+              <Link href="/resumes" className="ml-1 text-primary hover:underline">
+                去上传简历
+              </Link>
+            </p>
           </CardContent>
         </Card>
       )}
