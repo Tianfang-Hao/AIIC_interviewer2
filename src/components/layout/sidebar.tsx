@@ -7,6 +7,7 @@ import {
   Target,
   Send,
   MessageSquare,
+  BookOpen,
   LayoutDashboard,
   Settings,
 } from 'lucide-react';
@@ -37,6 +38,11 @@ const navItems = [
     title: '模拟面试',
     href: '/interviews',
     icon: MessageSquare,
+  },
+  {
+    title: '错题本',
+    href: '/mistakes',
+    icon: BookOpen,
   },
   {
     title: '求职意向',

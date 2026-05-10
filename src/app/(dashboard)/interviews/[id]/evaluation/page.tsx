@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { RadarChart } from '@/components/features/interview/radar-chart';
+import type { CoachCard, CoachScores } from '@/lib/ai/interview-coach';
 
 interface QuestionEvaluation {
   question: string;
@@ -71,6 +73,7 @@ export default function EvaluationPage({
 }) {
   const { id } = use(params);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [averageScores, setAverageScores] = useState<CoachScores | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(
@@ -89,6 +92,33 @@ export default function EvaluationPage({
 
         if (interviewData.evaluation) {
           setEvaluation(interviewData.evaluation as Evaluation);
+
+          // Compute average scores from coachCards if present
+          if (interviewData.coachCards && Array.isArray(interviewData.coachCards) && interviewData.coachCards.length > 0) {
+            const cards = interviewData.coachCards as CoachCard[];
+            const avg: CoachScores = {
+              relevance: 0,
+              structure: 0,
+              quantification: 0,
+              technicalDepth: 0,
+              fluency: 0,
+            };
+            for (const card of cards) {
+              avg.relevance += card.scores.relevance;
+              avg.structure += card.scores.structure;
+              avg.quantification += card.scores.quantification;
+              avg.technicalDepth += card.scores.technicalDepth;
+              avg.fluency += card.scores.fluency;
+            }
+            const n = cards.length;
+            avg.relevance = Math.round((avg.relevance / n) * 10) / 10;
+            avg.structure = Math.round((avg.structure / n) * 10) / 10;
+            avg.quantification = Math.round((avg.quantification / n) * 10) / 10;
+            avg.technicalDepth = Math.round((avg.technicalDepth / n) * 10) / 10;
+            avg.fluency = Math.round((avg.fluency / n) * 10) / 10;
+            setAverageScores(avg);
+          }
+
           setLoading(false);
           return;
         }
@@ -174,6 +204,18 @@ export default function EvaluationPage({
           </p>
         </div>
       </div>
+
+      {/* Radar Chart - computed from coach cards */}
+      {averageScores && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">能力雷达图</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <RadarChart scores={averageScores} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Overall score card */}
       <Card className={cn('border-2', ratingConfig.bgColor)}>
