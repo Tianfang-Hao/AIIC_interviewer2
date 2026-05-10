@@ -33,6 +33,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate message length
+    if (message.length > 5000) {
+      return Response.json(
+        { error: '消息过长，请控制在5000字以内' },
+        { status: 400 }
+      );
+    }
+
     // Fetch the interview
     const interview = await prisma.mockInterview.findUnique({
       where: { id: interviewId },

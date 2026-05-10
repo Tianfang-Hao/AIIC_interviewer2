@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import {
   ArrowLeft,
   Building2,
@@ -40,7 +40,7 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.id) return null;
+  if (!session?.user?.id) redirect('/login');
 
   const userId = session.user.id;
   const { id } = await params;

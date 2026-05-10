@@ -57,9 +57,12 @@ export async function POST(request: Request) {
       style: InterviewStyle;
     };
 
-    if (!round || !style) {
+    const VALID_ROUNDS = ['FIRST', 'SECOND', 'THIRD'];
+    const VALID_STYLES = ['WARM', 'DETAIL', 'STRICT', 'DIVERGENT', 'SILENT'];
+
+    if (!round || !style || !VALID_ROUNDS.includes(round) || !VALID_STYLES.includes(style)) {
       return Response.json(
-        { error: '请选择面试轮次和面试官风格' },
+        { error: '请选择有效的面试轮次和面试官风格' },
         { status: 400 }
       );
     }

@@ -32,6 +32,8 @@ export async function GET() {
 
     // Fetch all jobs (no pagination for match calculation)
     const jobs = await prisma.job.findMany({
+      take: 500,
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         company: true,

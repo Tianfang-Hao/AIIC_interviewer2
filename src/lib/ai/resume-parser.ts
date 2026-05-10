@@ -127,7 +127,12 @@ export async function parseResumeWithAI(
     .replace(/\n?```\s*$/, '')
     .trim();
 
-  const parsed: ParsedResume = JSON.parse(jsonStr);
+  let parsed: ParsedResume;
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
+    throw new Error('AI 返回的格式无效，请重试');
+  }
 
   // Ensure structure integrity with defaults
   return {

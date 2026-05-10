@@ -1,5 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
+// NOTE: datasource url is provided at runtime via prisma.config.ts (Prisma 7 driver adapter pattern)
 
 generator client {
   provider = "prisma-client"
@@ -30,6 +31,7 @@ model User {
   jobPreference  JobPreference?
   applications   Application[]
   mockInterviews MockInterview[]
+  createdJobs    Job[]
 }
 
 model Account {
@@ -49,6 +51,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -58,6 +61,8 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ============================================================
@@ -75,6 +80,8 @@ model Resume {
 
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   versions ResumeVersion[]
+
+  @@index([userId])
 }
 
 model ResumeVersion {
@@ -83,9 +90,12 @@ model ResumeVersion {
   name      String // e.g. "产品岗版本", "技术岗版本"
   content   Json
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   resume       Resume        @relation(fields: [resumeId], references: [id], onDelete: Cascade)
   applications Application[]
+
+  @@index([resumeId])
 }
 
 // ============================================================
@@ -94,6 +104,7 @@ model ResumeVersion {
 
 model Job {
   id           String   @id @default(cuid())
+  createdBy    String?
   company      String
   positionName String
   department   String?
@@ -112,8 +123,11 @@ model Job {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  creator        User?          @relation(fields: [createdBy], references: [id], onDelete: SetNull)
   applications   Application[]
   mockInterviews MockInterview[]
+
+  @@index([createdBy])
 }
 
 enum JobType {
@@ -168,6 +182,9 @@ model Application {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   job           Job?           @relation(fields: [jobId], references: [id], onDelete: SetNull)
   resumeVersion ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([jobId])
 }
 
 enum ApplicationStatus {
@@ -202,9 +219,12 @@ model MockInterview {
   messages   Json // chat messages array
   evaluation Json? // AI evaluation result
   createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   job  Job? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
 }
 
 enum InterviewRound {

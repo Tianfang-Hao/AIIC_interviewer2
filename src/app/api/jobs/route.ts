@@ -1,5 +1,8 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { jobSchema } from '@/lib/validations/job';
+
+const VALID_JOB_TYPES = ['INTERN', 'CAMPUS', 'SOCIAL'];
 
 export async function GET(request: Request) {
   try {
@@ -31,7 +34,7 @@ export async function GET(request: Request) {
     }
 
     // Filter by jobType
-    if (jobType && ['INTERN', 'CAMPUS', 'SOCIAL'].includes(jobType)) {
+    if (jobType && VALID_JOB_TYPES.includes(jobType)) {
       where.jobType = jobType;
     }
 
@@ -79,6 +82,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+
+    // Validate with Zod schema
+    const parsed = jobSchema.safeParse(body);
+    if (!parsed.success) {
+      return Response.json(
+        { error: '数据格式不正确', details: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
     const {
       company,
       positionName,
@@ -94,17 +107,11 @@ export async function POST(request: Request) {
       sourceUrl,
       companySize,
       industry,
-    } = body;
-
-    if (!company || !positionName) {
-      return Response.json(
-        { error: '公司名称和岗位名称为必填项' },
-        { status: 400 }
-      );
-    }
+    } = parsed.data;
 
     const job = await prisma.job.create({
       data: {
+        createdBy: session.user.id,
         company,
         positionName,
         department: department || null,

@@ -1,6 +1,8 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+const VALID_JOB_TYPES = ['INTERN', 'CAMPUS', 'SOCIAL'];
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -46,6 +48,16 @@ export async function PATCH(
       return Response.json({ error: '岗位不存在' }, { status: 404 });
     }
 
+    // Only the creator can edit (seed data has no creator, so anyone can edit those)
+    if (existing.createdBy && existing.createdBy !== session.user.id) {
+      return Response.json({ error: '无权修改此岗位' }, { status: 403 });
+    }
+
+    // Validate jobType enum
+    if (body.jobType !== undefined && !VALID_JOB_TYPES.includes(body.jobType)) {
+      return Response.json({ error: '无效的岗位类型' }, { status: 400 });
+    }
+
     const data: Record<string, unknown> = {};
 
     if (body.company !== undefined) data.company = body.company;
@@ -56,15 +68,11 @@ export async function PATCH(
     if (body.jdContent !== undefined) data.jdContent = body.jdContent || null;
     if (body.requirements !== undefined) data.requirements = body.requirements;
     if (body.preferred !== undefined) data.preferred = body.preferred;
-    if (body.salaryRange !== undefined)
-      data.salaryRange = body.salaryRange || null;
-    if (body.postDate !== undefined)
-      data.postDate = body.postDate ? new Date(body.postDate) : null;
-    if (body.deadline !== undefined)
-      data.deadline = body.deadline ? new Date(body.deadline) : null;
+    if (body.salaryRange !== undefined) data.salaryRange = body.salaryRange || null;
+    if (body.postDate !== undefined) data.postDate = body.postDate ? new Date(body.postDate) : null;
+    if (body.deadline !== undefined) data.deadline = body.deadline ? new Date(body.deadline) : null;
     if (body.sourceUrl !== undefined) data.sourceUrl = body.sourceUrl || null;
-    if (body.companySize !== undefined)
-      data.companySize = body.companySize || null;
+    if (body.companySize !== undefined) data.companySize = body.companySize || null;
     if (body.industry !== undefined) data.industry = body.industry || null;
 
     const updated = await prisma.job.update({
@@ -94,6 +102,11 @@ export async function DELETE(
     const existing = await prisma.job.findUnique({ where: { id } });
     if (!existing) {
       return Response.json({ error: '岗位不存在' }, { status: 404 });
+    }
+
+    // Only the creator can delete
+    if (existing.createdBy && existing.createdBy !== session.user.id) {
+      return Response.json({ error: '无权删除此岗位' }, { status: 403 });
     }
 
     await prisma.job.delete({ where: { id } });

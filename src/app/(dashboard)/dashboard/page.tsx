@@ -19,6 +19,7 @@ import {
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 const quickActions = [
   {
@@ -58,6 +59,7 @@ interface OnboardingStep {
 
 export default async function DashboardPage() {
   const session = await auth();
+  if (!session?.user?.id) redirect('/login');
   const userName = session?.user?.name || '用户';
 
   let hasPreference = false;

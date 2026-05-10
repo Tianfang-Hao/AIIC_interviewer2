@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
       return Response.json(
         { error: '仅支持 PDF 和 DOCX 格式' },
         { status: 400 }
@@ -52,10 +52,16 @@ export async function POST(request: Request) {
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
     await mkdir(uploadsDir, { recursive: true });
 
-    // Generate unique filename
+    // Sanitize filename to prevent path traversal
+    const baseName = path.basename(file.name).replace(/[^a-zA-Z0-9.\u4e00-\u9fff_-]/g, '_');
     const timestamp = Date.now();
-    const uniqueName = `${timestamp}-${file.name.replace(/\s+/g, '_')}`;
+    const uniqueName = `${timestamp}-${baseName}`;
     const filePath = path.join(uploadsDir, uniqueName);
+
+    // Verify the resolved path is within uploads directory
+    if (!filePath.startsWith(uploadsDir + path.sep) && filePath !== uploadsDir) {
+      return Response.json({ error: '文件名无效' }, { status: 400 });
+    }
 
     // Write file to disk
     const bytes = await file.arrayBuffer();
