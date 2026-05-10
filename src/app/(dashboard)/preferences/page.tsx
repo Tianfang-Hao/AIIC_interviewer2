@@ -34,7 +34,6 @@ const JOB_TYPE_OPTIONS = [
   { label: '日常实习', value: 'INTERN' },
   { label: '秋招', value: 'CAMPUS' },
   { label: '春招', value: 'CAMPUS' },
-  { label: '社招', value: 'SOCIAL' },
 ] as const;
 
 // We store the display label in a separate field and map to JobType enum
@@ -45,7 +44,6 @@ const JOB_TYPE_OPTIONS = [
 const JOB_TYPE_ENUM_OPTIONS = [
   { label: '实习（暑期/日常）', value: 'INTERN' },
   { label: '校招（秋招/春招）', value: 'CAMPUS' },
-  { label: '社招', value: 'SOCIAL' },
 ] as const;
 
 const CITY_OPTIONS = [
