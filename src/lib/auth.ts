@@ -57,6 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         nextUrl.pathname.startsWith('/jobs') ||
         nextUrl.pathname.startsWith('/applications') ||
         nextUrl.pathname.startsWith('/interviews') ||
+        nextUrl.pathname.startsWith('/preferences') ||
         nextUrl.pathname.startsWith('/settings');
       const isOnAuth =
         nextUrl.pathname === '/login' || nextUrl.pathname === '/register';

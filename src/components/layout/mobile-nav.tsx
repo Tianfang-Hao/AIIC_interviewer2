@@ -10,6 +10,7 @@ import {
   Send,
   MessageSquare,
   LayoutDashboard,
+  Settings,
 } from 'lucide-react';
 import {
   Sheet,
@@ -45,6 +46,11 @@ const navItems = [
     title: '模拟面试',
     href: '/interviews',
     icon: MessageSquare,
+  },
+  {
+    title: '求职意向',
+    href: '/preferences',
+    icon: Settings,
   },
 ];
 
