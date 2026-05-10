@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileDown } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
@@ -44,7 +44,7 @@ export default async function ResumeDetailPage({
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">
             {resume.fileName}
           </h1>
@@ -57,6 +57,15 @@ export default async function ResumeDetailPage({
             })}
           </p>
         </div>
+        {hasParsedData && (
+          <Link
+            href={`/resumes/${resume.id}/export`}
+            className={buttonVariants({ variant: 'outline', size: 'default' })}
+          >
+            <FileDown className="mr-1.5 h-4 w-4" />
+            导出 PDF
+          </Link>
+        )}
       </div>
 
       <ResumeDetail

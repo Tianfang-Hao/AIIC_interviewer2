@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileDown } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
@@ -45,7 +45,7 @@ export default async function VersionEditorPage({
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">
             {version.name}
           </h1>
@@ -53,6 +53,13 @@ export default async function VersionEditorPage({
             {resume.fileName} - 版本编辑
           </p>
         </div>
+        <Link
+          href={`/resumes/${id}/export?versionId=${versionId}`}
+          className={buttonVariants({ variant: 'outline', size: 'default' })}
+        >
+          <FileDown className="mr-1.5 h-4 w-4" />
+          导出此版本
+        </Link>
       </div>
 
       <VersionEditor
