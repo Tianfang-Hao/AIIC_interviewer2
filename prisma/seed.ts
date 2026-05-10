@@ -1,6 +1,11 @@
-import { PrismaClient, JobType } from '../src/generated/prisma';
+import 'dotenv/config';
+import { PrismaClient } from '../src/generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+type JobType = 'INTERN' | 'CAMPUS' | 'SOCIAL';
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 const companies = [
   { name: '字节跳动', size: '10000人以上', industry: '互联网/科技' },
@@ -108,7 +113,6 @@ async function main() {
   let idx = 0;
 
   for (const company of companies) {
-    // Each company gets 2-3 positions
     const numPositions = 2 + (idx % 2);
     for (let i = 0; i < numPositions && i < positions.length; i++) {
       const pos = positions[(idx + i) % positions.length];
