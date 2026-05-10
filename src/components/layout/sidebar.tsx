@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   {
     title: '仪表盘',
-    href: '/',
+    href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
@@ -51,7 +51,7 @@ export function Sidebar() {
   return (
     <aside className="hidden w-64 shrink-0 border-r bg-card md:block">
       <div className="flex h-14 items-center border-b px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
           <Target className="h-5 w-5 text-primary" />
           <span>AI 求职助手</span>
         </Link>
@@ -60,7 +60,7 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== '/' && pathname.startsWith(item.href));
+            (item.href !== '/dashboard' && pathname.startsWith(item.href));
           return (
             <Link
               key={item.href}

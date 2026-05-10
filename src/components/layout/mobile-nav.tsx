@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   {
     title: '仪表盘',
-    href: '/',
+    href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
@@ -75,7 +75,7 @@ export function MobileNav() {
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== '/' && pathname.startsWith(item.href));
+              (item.href !== '/dashboard' && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.href}

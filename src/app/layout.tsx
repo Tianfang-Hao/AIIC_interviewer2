@@ -13,8 +13,40 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'AI 求职助手',
-  description: '智能求职管理平台 - 简历优化、岗位匹配、投递管理、模拟面试',
+  title: {
+    default: 'AI 求职助手 - 智能求职管理平台',
+    template: '%s | AI 求职助手',
+  },
+  description:
+    '基于 AI 的一站式求职管理平台，提供智能简历解析、岗位精准匹配、AI 简历优化、模拟面试训练和投递进度管理功能。',
+  keywords: [
+    'AI求职',
+    '简历优化',
+    '岗位匹配',
+    '模拟面试',
+    '投递管理',
+    '求职助手',
+    '智能简历',
+  ],
+  authors: [{ name: 'AI Job Assistant' }],
+  openGraph: {
+    type: 'website',
+    locale: 'zh_CN',
+    siteName: 'AI 求职助手',
+    title: 'AI 求职助手 - 让求职更高效',
+    description:
+      '基于 AI 的一站式求职管理平台，从简历解析到面试准备，全流程助力你的求职之路。',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AI 求职助手 - 让求职更高效',
+    description:
+      '基于 AI 的一站式求职管理平台，从简历解析到面试准备，全流程助力你的求职之路。',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

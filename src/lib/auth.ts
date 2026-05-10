@@ -52,7 +52,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     authorized({ auth: session, request: { nextUrl } }) {
       const isLoggedIn = !!session?.user;
       const isOnDashboard =
-        nextUrl.pathname === '/' ||
+        nextUrl.pathname === '/dashboard' ||
+        nextUrl.pathname.startsWith('/dashboard/') ||
         nextUrl.pathname.startsWith('/resumes') ||
         nextUrl.pathname.startsWith('/jobs') ||
         nextUrl.pathname.startsWith('/applications') ||
@@ -68,7 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (isOnAuth && isLoggedIn) {
-        return Response.redirect(new URL('/', nextUrl));
+        return Response.redirect(new URL('/dashboard', nextUrl));
       }
 
       return true;
