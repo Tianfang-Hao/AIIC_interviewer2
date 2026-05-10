@@ -198,7 +198,7 @@ model MockInterview {
   userId     String
   jobId      String?
   round      InterviewRound     @default(FIRST)
-  style      InterviewStyle     @default(BEHAVIORAL)
+  style      InterviewStyle     @default(WARM)
   messages   Json // chat messages array
   evaluation Json? // AI evaluation result
   createdAt  DateTime           @default(now())
@@ -211,12 +211,12 @@ enum InterviewRound {
   FIRST
   SECOND
   THIRD
-  HR
 }
 
 enum InterviewStyle {
-  BEHAVIORAL
-  TECHNICAL
-  CASE_STUDY
-  PRESSURE
+  WARM
+  DETAIL
+  STRICT
+  DIVERGENT
+  SILENT
 }
