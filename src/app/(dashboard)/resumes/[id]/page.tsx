@@ -4,7 +4,9 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import { buttonVariants } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { ResumeDetail } from '@/components/features/resume/resume-detail';
+import { VersionList } from '@/components/features/resume/version-list';
 import type { ParsedResume } from '@/lib/ai/resume-parser';
 
 export default async function ResumeDetailPage({
@@ -30,6 +32,8 @@ export default async function ResumeDetailPage({
   if (resume.userId !== session.user.id) {
     notFound();
   }
+
+  const hasParsedData = resume.parsedData !== null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -61,6 +65,14 @@ export default async function ResumeDetailPage({
         fileUrl={resume.fileUrl}
         parsedData={resume.parsedData as ParsedResume | null}
       />
+
+      {/* Version management section - only show when resume is parsed */}
+      {hasParsedData && (
+        <>
+          <Separator />
+          <VersionList resumeId={resume.id} />
+        </>
+      )}
     </div>
   );
 }

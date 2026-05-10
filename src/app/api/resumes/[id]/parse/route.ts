@@ -49,10 +49,26 @@ export async function POST(
     const parsedData = await parseResumeWithAI(text);
 
     // Save to database
+    const parsedJson = JSON.parse(JSON.stringify(parsedData));
     const updatedResume = await prisma.resume.update({
       where: { id },
-      data: { parsedData: JSON.parse(JSON.stringify(parsedData)) },
+      data: { parsedData: parsedJson },
     });
+
+    // Auto-create initial "默认版本" if no versions exist yet
+    const versionCount = await prisma.resumeVersion.count({
+      where: { resumeId: id },
+    });
+
+    if (versionCount === 0) {
+      await prisma.resumeVersion.create({
+        data: {
+          resumeId: id,
+          name: '默认版本',
+          content: parsedJson,
+        },
+      });
+    }
 
     return Response.json(updatedResume);
   } catch (error) {
