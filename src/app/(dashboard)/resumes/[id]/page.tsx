@@ -1,0 +1,66 @@
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { notFound, redirect } from 'next/navigation';
+import { buttonVariants } from '@/components/ui/button';
+import { ResumeDetail } from '@/components/features/resume/resume-detail';
+import type { ParsedResume } from '@/lib/ai/resume-parser';
+
+export default async function ResumeDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
+
+  const { id } = await params;
+
+  const resume = await prisma.resume.findUnique({
+    where: { id },
+  });
+
+  if (!resume) {
+    notFound();
+  }
+
+  if (resume.userId !== session.user.id) {
+    notFound();
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div className="flex items-center gap-4">
+        <Link
+          href="/resumes"
+          className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {resume.fileName}
+          </h1>
+          <p className="text-muted-foreground">
+            上传于{' '}
+            {new Date(resume.createdAt).toLocaleDateString('zh-CN', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+        </div>
+      </div>
+
+      <ResumeDetail
+        resumeId={resume.id}
+        fileName={resume.fileName}
+        fileUrl={resume.fileUrl}
+        parsedData={resume.parsedData as ParsedResume | null}
+      />
+    </div>
+  );
+}

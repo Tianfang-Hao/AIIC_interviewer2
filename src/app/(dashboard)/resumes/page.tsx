@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { FileText, Plus, File } from 'lucide-react';
+import { FileText, Plus, File, CheckCircle, Clock } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { buttonVariants } from '@/components/ui/button';
@@ -56,6 +56,7 @@ export default async function ResumesPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {resumes.map((resume) => {
             const isPdf = resume.fileName.toLowerCase().endsWith('.pdf');
+            const isParsed = resume.parsedData !== null;
             const uploadDate = new Date(resume.createdAt).toLocaleDateString(
               'zh-CN',
               {
@@ -101,8 +102,28 @@ export default async function ResumesPage() {
                     >
                       {isPdf ? 'PDF' : 'DOCX'}
                     </span>
+                    {isParsed ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                        <CheckCircle className="h-3 w-3" />
+                        已解析
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300">
+                        <Clock className="h-3 w-3" />
+                        未解析
+                      </span>
+                    )}
                   </div>
                   <div className="mt-3 flex items-center gap-2">
+                    <Link
+                      href={`/resumes/${resume.id}`}
+                      className={buttonVariants({
+                        variant: 'outline',
+                        size: 'sm',
+                      })}
+                    >
+                      {isParsed ? '查看/编辑' : '去解析'}
+                    </Link>
                     {resume.fileUrl && (
                       <a
                         href={resume.fileUrl}
