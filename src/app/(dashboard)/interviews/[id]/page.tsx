@@ -8,6 +8,7 @@ import {
   Loader2,
   StopCircle,
   Building2,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -99,10 +100,10 @@ export default function InterviewDetailPage({
   }, []);
 
   const handleEndInterview = async () => {
-    if (!confirm('确定要结束面试吗？结束后将无法继续对话。')) return;
+    if (!confirm('确定要结束面试吗？结束后将生成评估报告。')) return;
     setIsEnded(true);
-    // For now, just end - evaluation will be implemented in Step 13
-    router.push('/interviews');
+    // Navigate to the evaluation page, which triggers evaluation generation
+    router.push(`/interviews/${id}/evaluation`);
   };
 
   if (loading) {
@@ -172,6 +173,16 @@ export default function InterviewDetailPage({
               <StopCircle className="mr-1.5 h-4 w-4" />
               结束面试
             </Button>
+          )}
+
+          {/* View evaluation button (show when interview ended) */}
+          {isEnded && (
+            <Link href={`/interviews/${id}/evaluation`}>
+              <Button size="sm" variant="outline">
+                <FileText className="mr-1.5 h-4 w-4" />
+                查看评估报告
+              </Button>
+            </Link>
           )}
         </div>
       </div>

@@ -8,6 +8,10 @@ import {
   Clock,
   Building2,
   Loader2,
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -296,56 +300,123 @@ export default function InterviewsPage() {
           </Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {pastInterviews.map((interview) => (
-              <button
-                key={interview.id}
-                type="button"
-                onClick={() => router.push(`/interviews/${interview.id}`)}
-                className="text-left"
-              >
-                <Card className="h-full transition-shadow hover:shadow-md">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-sm">
-                        {interview.job
-                          ? `${interview.job.company} - ${interview.job.positionName}`
-                          : '通用面试'}
-                      </CardTitle>
-                      {interview.evaluation != null && (
-                        <Badge variant="secondary" className="shrink-0">
-                          已评估
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Badge variant="outline">
-                          {ROUND_LABELS[interview.round] || interview.round}
-                        </Badge>
-                        <Badge variant="outline">
-                          {STYLE_LABELS[interview.style] || interview.style}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {formatDate(interview.createdAt)}
-                      </div>
-                      {interview.job && (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Building2 className="h-3 w-3" />
-                          {interview.job.company}
+            {pastInterviews.map((interview) => {
+              const evalData = interview.evaluation as {
+                overallRating?: string;
+                overallScore?: number;
+              } | null;
+              const hasEval = evalData != null;
+
+              return (
+                <div
+                  key={interview.id}
+                  className="text-left"
+                >
+                  <Card className="h-full transition-shadow hover:shadow-md">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/interviews/${interview.id}`)}
+                      className="w-full text-left"
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="text-sm">
+                            {interview.job
+                              ? `${interview.job.company} - ${interview.job.positionName}`
+                              : '通用面试'}
+                          </CardTitle>
+                          {hasEval && (
+                            <EvalRatingBadge
+                              rating={evalData.overallRating}
+                              score={evalData.overallScore}
+                            />
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </button>
-            ))}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline">
+                              {ROUND_LABELS[interview.round] || interview.round}
+                            </Badge>
+                            <Badge variant="outline">
+                              {STYLE_LABELS[interview.style] || interview.style}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {formatDate(interview.createdAt)}
+                          </div>
+                          {interview.job && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Building2 className="h-3 w-3" />
+                              {interview.job.company}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </button>
+                    {hasEval && (
+                      <div className="border-t px-6 py-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(
+                              `/interviews/${interview.id}/evaluation`
+                            )
+                          }
+                          className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                        >
+                          <FileText className="h-3 w-3" />
+                          查看评估报告
+                        </button>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function EvalRatingBadge({
+  rating,
+  score,
+}: {
+  rating?: string;
+  score?: number;
+}) {
+  if (rating === 'pass') {
+    return (
+      <Badge className="shrink-0 gap-1 border-green-300 bg-green-50 text-green-700 hover:bg-green-50">
+        <CheckCircle2 className="h-3 w-3" />
+        通过{score != null ? ` ${score}分` : ''}
+      </Badge>
+    );
+  }
+  if (rating === 'needs_improvement') {
+    return (
+      <Badge className="shrink-0 gap-1 border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-50">
+        <AlertCircle className="h-3 w-3" />
+        待提升{score != null ? ` ${score}分` : ''}
+      </Badge>
+    );
+  }
+  if (rating === 'fail') {
+    return (
+      <Badge className="shrink-0 gap-1 border-red-300 bg-red-50 text-red-700 hover:bg-red-50">
+        <XCircle className="h-3 w-3" />
+        不通过{score != null ? ` ${score}分` : ''}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="shrink-0">
+      已评估
+    </Badge>
   );
 }
