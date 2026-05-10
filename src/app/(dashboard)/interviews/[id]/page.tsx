@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChatInterface } from '@/components/features/interview/chat-interface';
+import type { CoachCard } from '@/lib/ai/interview-coach';
 
 const ROUND_LABELS: Record<string, string> = {
   FIRST: '第一轮 · 技术基础面',
@@ -39,6 +40,7 @@ interface InterviewData {
   round: string;
   style: string;
   messages: Message[];
+  coachCards: CoachCard[];
   evaluation: unknown;
   createdAt: string;
   job: {
@@ -71,7 +73,10 @@ export default function InterviewDetailPage({
           throw new Error(errData?.error || '获取面试数据失败');
         }
         const data = await res.json();
-        setInterview(data);
+        setInterview({
+          ...data,
+          coachCards: data.coachCards || [],
+        });
         if (data.evaluation) {
           setIsEnded(true);
         }
@@ -102,7 +107,6 @@ export default function InterviewDetailPage({
   const handleEndInterview = async () => {
     if (!confirm('确定要结束面试吗？结束后将生成评估报告。')) return;
     setIsEnded(true);
-    // Navigate to the evaluation page, which triggers evaluation generation
     router.push(`/interviews/${id}/evaluation`);
   };
 
@@ -187,11 +191,13 @@ export default function InterviewDetailPage({
         </div>
       </div>
 
-      {/* Chat area */}
+      {/* Chat area with dual pane */}
       <div className="flex-1 overflow-hidden">
         <ChatInterface
           interviewId={interview.id}
+          round={interview.round}
           initialMessages={interview.messages}
+          initialCoachCards={interview.coachCards}
           disabled={isEnded}
         />
       </div>
