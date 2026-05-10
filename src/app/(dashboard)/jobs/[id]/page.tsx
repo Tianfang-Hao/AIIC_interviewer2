@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { buttonVariants } from '@/components/ui/button';
 import {
   Card,
@@ -23,6 +24,13 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { JOB_TYPE_LABELS } from '@/lib/validations/job';
 import { DeleteJobButton } from '@/components/features/job/delete-job-button';
+import {
+  MatchScoreBadge,
+  MatchDetailInline,
+} from '@/components/features/job/match-detail';
+import { calculateMatchScore } from '@/lib/services/job-matcher';
+import type { ParsedResume } from '@/lib/ai/resume-parser';
+import type { MatchInfo } from '@/components/features/job/match-detail';
 
 export default async function JobDetailPage({
   params,
@@ -32,11 +40,57 @@ export default async function JobDetailPage({
   const session = await auth();
   if (!session?.user?.id) return null;
 
+  const userId = session.user.id;
   const { id } = await params;
   const job = await prisma.job.findUnique({ where: { id } });
 
   if (!job) {
     notFound();
+  }
+
+  // Calculate match score if user has resume and preferences
+  let matchInfo: MatchInfo | null = null;
+
+  const [resume, preference] = await Promise.all([
+    prisma.resume.findFirst({
+      where: { userId, parsedData: { not: Prisma.DbNull } },
+      orderBy: { updatedAt: 'desc' },
+      select: { parsedData: true },
+    }),
+    prisma.jobPreference.findUnique({
+      where: { userId },
+    }),
+  ]);
+
+  if (resume?.parsedData && preference) {
+    const parsedResume = resume.parsedData as unknown as ParsedResume;
+    const result = calculateMatchScore(
+      parsedResume,
+      {
+        positions: preference.positions,
+        jobType: preference.jobType,
+        cities: preference.cities,
+        companySize: preference.companySize,
+        industries: preference.industries,
+        salaryMin: preference.salaryMin,
+        salaryMax: preference.salaryMax,
+      },
+      {
+        id: job.id,
+        company: job.company,
+        positionName: job.positionName,
+        department: job.department,
+        jobType: job.jobType,
+        location: job.location,
+        jdContent: job.jdContent,
+        requirements: job.requirements,
+        preferred: job.preferred,
+        salaryRange: job.salaryRange,
+        industry: job.industry,
+        companySize: job.companySize,
+      }
+    );
+    matchInfo = result;
   }
 
   const formatDate = (date: Date | null) => {
@@ -69,7 +123,12 @@ export default async function JobDetailPage({
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle className="text-xl">{job.positionName}</CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-xl">{job.positionName}</CardTitle>
+                {matchInfo && (
+                  <MatchScoreBadge score={matchInfo.totalScore} />
+                )}
+              </div>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Building2 className="h-4 w-4" />
@@ -168,6 +227,21 @@ export default async function JobDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Match score breakdown */}
+      {matchInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              岗位匹配分析
+              <MatchScoreBadge score={matchInfo.totalScore} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MatchDetailInline match={matchInfo} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* JD Content */}
       {job.jdContent && (

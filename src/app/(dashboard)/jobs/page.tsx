@@ -12,6 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
+  ArrowUpDown,
+  Info,
 } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -24,6 +26,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { JOB_TYPE_LABELS, CITY_OPTIONS } from '@/lib/validations/job';
+import {
+  MatchScoreBadge,
+  MatchDetail,
+  type MatchInfo,
+} from '@/components/features/job/match-detail';
 
 interface Job {
   id: string;
@@ -47,6 +54,15 @@ interface JobsResponse {
   totalPages: number;
 }
 
+interface MatchResponse {
+  matches: MatchInfo[];
+  hasResume: boolean;
+  hasPreference: boolean;
+  jobCount: number;
+}
+
+type SortMode = 'latest' | 'match';
+
 export default function JobsPage() {
   const [data, setData] = useState<JobsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +71,13 @@ export default function JobsPage() {
   const [cityFilter, setCityFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [page, setPage] = useState(1);
+
+  // Match state
+  const [matchMap, setMatchMap] = useState<Map<string, MatchInfo>>(new Map());
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [hasResume, setHasResume] = useState(false);
+  const [hasPreference, setHasPreference] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>('latest');
 
   // Debounce search input
   useEffect(() => {
@@ -69,6 +92,31 @@ export default function JobsPage() {
   useEffect(() => {
     setPage(1);
   }, [cityFilter, typeFilter]);
+
+  // Fetch match scores once on load
+  useEffect(() => {
+    async function fetchMatches() {
+      setMatchLoading(true);
+      try {
+        const res = await fetch('/api/jobs/match');
+        if (res.ok) {
+          const result: MatchResponse = await res.json();
+          setHasResume(result.hasResume);
+          setHasPreference(result.hasPreference);
+          const map = new Map<string, MatchInfo>();
+          for (const m of result.matches) {
+            map.set(m.jobId, m);
+          }
+          setMatchMap(map);
+        }
+      } catch (error) {
+        console.error('Fetch match scores error:', error);
+      } finally {
+        setMatchLoading(false);
+      }
+    }
+    fetchMatches();
+  }, []);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -105,6 +153,19 @@ export default function JobsPage() {
     });
   };
 
+  // Sort jobs based on current sort mode
+  const sortedJobs = data?.jobs
+    ? sortMode === 'match' && matchMap.size > 0
+      ? [...data.jobs].sort((a, b) => {
+          const scoreA = matchMap.get(a.id)?.totalScore ?? -1;
+          const scoreB = matchMap.get(b.id)?.totalScore ?? -1;
+          return scoreB - scoreA;
+        })
+      : data.jobs
+    : [];
+
+  const hasMatchData = hasResume && hasPreference && matchMap.size > 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -120,6 +181,25 @@ export default function JobsPage() {
           添加岗位
         </Link>
       </div>
+
+      {/* Match status banner */}
+      {!matchLoading && (!hasResume || !hasPreference) && (
+        <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm dark:border-blue-800 dark:bg-blue-950/30">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <div>
+            <p className="font-medium text-blue-800 dark:text-blue-300">
+              完善信息以启用智能匹配
+            </p>
+            <p className="mt-0.5 text-blue-600 dark:text-blue-400">
+              {!hasResume && !hasPreference
+                ? '请先上传简历并设置求职意向，系统将自动计算每个岗位的匹配度。'
+                : !hasResume
+                  ? '请先上传并解析简历，才能计算岗位匹配度。'
+                  : '请先设置求职意向，才能计算岗位匹配度。'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -156,6 +236,21 @@ export default function JobsPage() {
             </option>
           ))}
         </select>
+
+        {/* Sort by match button */}
+        {hasMatchData && (
+          <Button
+            variant={sortMode === 'match' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() =>
+              setSortMode((m) => (m === 'match' ? 'latest' : 'match'))
+            }
+            className="shrink-0"
+          >
+            <ArrowUpDown className="mr-1 h-4 w-4" />
+            {sortMode === 'match' ? '按匹配度排序' : '按时间排序'}
+          </Button>
+        )}
       </div>
 
       {/* Results summary */}
@@ -165,6 +260,7 @@ export default function JobsPage() {
           {debouncedQuery && `，搜索「${debouncedQuery}」`}
           {cityFilter && `，城市：${cityFilter}`}
           {typeFilter && `，类型：${JOB_TYPE_LABELS[typeFilter]}`}
+          {hasMatchData && '，已启用智能匹配'}
         </p>
       )}
 
@@ -186,85 +282,102 @@ export default function JobsPage() {
             </Card>
           ))}
         </div>
-      ) : data && data.jobs.length > 0 ? (
+      ) : data && sortedJobs.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.jobs.map((job) => (
-            <Link key={job.id} href={`/jobs/${job.id}`}>
-              <Card className="h-full transition-shadow hover:shadow-md">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="truncate">
-                        {job.positionName}
-                      </CardTitle>
-                      <CardDescription className="mt-1 flex items-center gap-1">
-                        <Building2 className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{job.company}</span>
-                        {job.department && (
-                          <span className="truncate text-xs">
-                            · {job.department}
-                          </span>
-                        )}
-                      </CardDescription>
-                    </div>
-                    <Badge
-                      variant={
-                        job.jobType === 'INTERN' ? 'secondary' : 'outline'
-                      }
-                    >
-                      {JOB_TYPE_LABELS[job.jobType] || job.jobType}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {/* Location badges */}
-                    {job.location.length > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <div className="flex flex-wrap gap-1">
-                          {job.location.map((loc) => (
-                            <Badge
-                              key={loc}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {loc}
-                            </Badge>
-                          ))}
+          {sortedJobs.map((job) => {
+            const match = matchMap.get(job.id);
+            return (
+              <div key={job.id} className="flex flex-col">
+                <Link href={`/jobs/${job.id}`} className="flex-1">
+                  <Card className="h-full transition-shadow hover:shadow-md">
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="truncate">
+                            {job.positionName}
+                          </CardTitle>
+                          <CardDescription className="mt-1 flex items-center gap-1">
+                            <Building2 className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{job.company}</span>
+                            {job.department && (
+                              <span className="truncate text-xs">
+                                · {job.department}
+                              </span>
+                            )}
+                          </CardDescription>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge
+                            variant={
+                              job.jobType === 'INTERN' ? 'secondary' : 'outline'
+                            }
+                          >
+                            {JOB_TYPE_LABELS[job.jobType] || job.jobType}
+                          </Badge>
+                          {match && (
+                            <MatchScoreBadge score={match.totalScore} />
+                          )}
                         </div>
                       </div>
-                    )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {/* Location badges */}
+                        {job.location.length > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            <div className="flex flex-wrap gap-1">
+                              {job.location.map((loc) => (
+                                <Badge
+                                  key={loc}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
+                                  {loc}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
-                    {/* Salary */}
-                    {job.salaryRange && (
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Briefcase className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <span className="font-medium text-green-600 dark:text-green-400">
-                          {job.salaryRange}
-                        </span>
+                        {/* Salary */}
+                        {job.salaryRange && (
+                          <div className="flex items-center gap-1.5 text-sm">
+                            <Briefcase className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            <span className="font-medium text-green-600 dark:text-green-400">
+                              {job.salaryRange}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Post date */}
+                        {job.postDate && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Calendar className="h-3.5 w-3.5 shrink-0" />
+                            <span>{formatDate(job.postDate)}</span>
+                          </div>
+                        )}
+
+                        {/* Industry */}
+                        {job.industry && (
+                          <p className="text-xs text-muted-foreground">
+                            {job.industry}
+                          </p>
+                        )}
                       </div>
-                    )}
+                    </CardContent>
+                  </Card>
+                </Link>
 
-                    {/* Post date */}
-                    {job.postDate && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5 shrink-0" />
-                        <span>{formatDate(job.postDate)}</span>
-                      </div>
-                    )}
-
-                    {/* Industry */}
-                    {job.industry && (
-                      <p className="text-xs text-muted-foreground">
-                        {job.industry}
-                      </p>
-                    )}
+                {/* Match detail (expandable, outside the Link to avoid navigation) */}
+                {match && (
+                  <div className="mt-1">
+                    <MatchDetail match={match} />
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <Card>
