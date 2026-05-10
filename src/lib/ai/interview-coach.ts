@@ -153,7 +153,7 @@ export async function generateCoachFeedback(params: {
     );
   }
 
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, baseURL: process.env.ANTHROPIC_BASE_URL || undefined });
   const prompt = buildCoachPrompt(params);
 
   let lastError: unknown;
@@ -161,7 +161,7 @@ export async function generateCoachFeedback(params: {
   // Retry up to 2 times on JSON parse failure
   for (let attempt = 0; attempt < 2; attempt++) {
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-opus-4-6',
       max_tokens: 4096,
       messages: [
         {
