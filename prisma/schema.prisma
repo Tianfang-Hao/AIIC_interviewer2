@@ -218,6 +218,7 @@ model MockInterview {
   style      InterviewStyle     @default(WARM)
   messages   Json // chat messages array
   evaluation Json? // AI evaluation result
+  coachCards Json? // array of coach card data
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
 
