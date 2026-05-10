@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { JOB_TYPE_LABELS } from '@/lib/validations/job';
 import { DeleteJobButton } from '@/components/features/job/delete-job-button';
+import { MarkAppliedButton } from '@/components/features/application/mark-applied-button';
 import {
   MatchScoreBadge,
   MatchDetailInline,
@@ -52,7 +53,7 @@ export default async function JobDetailPage({
   // Calculate match score if user has resume and preferences
   let matchInfo: MatchInfo | null = null;
 
-  const [resume, preference] = await Promise.all([
+  const [resume, preference, existingApplication] = await Promise.all([
     prisma.resume.findFirst({
       where: { userId, parsedData: { not: Prisma.DbNull } },
       orderBy: { updatedAt: 'desc' },
@@ -60,6 +61,10 @@ export default async function JobDetailPage({
     }),
     prisma.jobPreference.findUnique({
       where: { userId },
+    }),
+    prisma.application.findFirst({
+      where: { userId, jobId: id },
+      select: { id: true },
     }),
   ]);
 
@@ -115,6 +120,14 @@ export default async function JobDetailPage({
           返回岗位列表
         </Link>
         <div className="flex items-center gap-2">
+          <MarkAppliedButton
+            jobId={job.id}
+            company={job.company}
+            position={job.positionName}
+            department={job.department}
+            location={job.location.length > 0 ? job.location[0] : null}
+            alreadyApplied={!!existingApplication}
+          />
           {resume?.id && (
             <Link
               href={`/resumes/${resume.id}/optimize?jobId=${job.id}`}
