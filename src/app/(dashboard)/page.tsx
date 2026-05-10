@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { FileText, Target, Send, MessageSquare } from 'lucide-react';
+import { auth } from '@/lib/auth';
 
 const stats = [
   {
@@ -34,11 +35,16 @@ const stats = [
   },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await auth();
+  const userName = session?.user?.name || '用户';
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">欢迎使用 AI 求职助手</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          你好，{userName}
+        </h1>
         <p className="text-muted-foreground">
           智能管理你的求职流程，从简历优化到面试准备，一站式搞定。
         </p>

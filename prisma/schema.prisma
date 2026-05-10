@@ -10,6 +10,10 @@ datasource db {
   provider = "postgresql"
 }
 
+// ============================================================
+// Auth Models
+// ============================================================
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -20,8 +24,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  accounts       Account[]
+  sessions       Session[]
+  resumes        Resume[]
+  jobPreference  JobPreference?
+  applications   Application[]
+  mockInterviews MockInterview[]
 }
 
 model Account {
@@ -50,4 +58,165 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// Resume Models
+// ============================================================
+
+model Resume {
+  id         String   @id @default(cuid())
+  userId     String
+  fileName   String
+  fileUrl    String?
+  parsedData Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions ResumeVersion[]
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  resumeId  String
+  name      String // e.g. "产品岗版本", "技术岗版本"
+  content   Json
+  createdAt DateTime @default(now())
+
+  resume       Resume        @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  applications Application[]
+}
+
+// ============================================================
+// Job Models
+// ============================================================
+
+model Job {
+  id           String   @id @default(cuid())
+  company      String
+  positionName String
+  department   String?
+  jobType      JobType  @default(CAMPUS)
+  location     String[] // multiple cities
+  jdContent    String?  @db.Text
+  requirements String[]
+  preferred    String[]
+  salaryRange  String?
+  postDate     DateTime?
+  deadline     DateTime?
+  sourceUrl    String?
+  companySize  String?
+  industry     String?
+  embedding    String?  @db.Text // placeholder for pgvector later
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  applications   Application[]
+  mockInterviews MockInterview[]
+}
+
+enum JobType {
+  INTERN
+  CAMPUS
+  SOCIAL
+}
+
+// ============================================================
+// Job Preference
+// ============================================================
+
+model JobPreference {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  positions   String[]
+  jobType     JobType?
+  cities      String[]
+  companySize String?
+  industries  String[]
+  salaryMin   Int?
+  salaryMax   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// Application Models
+// ============================================================
+
+model Application {
+  id              String            @id @default(cuid())
+  userId          String
+  jobId           String?
+  resumeVersionId String?
+  status          ApplicationStatus @default(APPLIED)
+  priority        Priority          @default(P2)
+  company         String
+  position        String
+  department      String?
+  applyDate       DateTime          @default(now())
+  jdLink          String?
+  location        String?
+  notes           String?           @db.Text
+  salaryInfo      String?
+  deadline        DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job           Job?           @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  resumeVersion ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SCREENING
+  WRITTEN_TEST
+  FIRST_INTERVIEW
+  SECOND_INTERVIEW
+  THIRD_INTERVIEW
+  HR_INTERVIEW
+  OFFER
+  REJECTED
+}
+
+enum Priority {
+  P0
+  P1
+  P2
+  P3
+}
+
+// ============================================================
+// Mock Interview
+// ============================================================
+
+model MockInterview {
+  id         String             @id @default(cuid())
+  userId     String
+  jobId      String?
+  round      InterviewRound     @default(FIRST)
+  style      InterviewStyle     @default(BEHAVIORAL)
+  messages   Json // chat messages array
+  evaluation Json? // AI evaluation result
+  createdAt  DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+}
+
+enum InterviewRound {
+  FIRST
+  SECOND
+  THIRD
+  HR
+}
+
+enum InterviewStyle {
+  BEHAVIORAL
+  TECHNICAL
+  CASE_STUDY
+  PRESSURE
 }
